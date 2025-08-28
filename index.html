@@ -377,17 +377,40 @@
             }
         };
 
-        // --- LOCAL STORAGE ---
-        const loadFromStorage = (key, defaultValue) => {
-            const storedValue = localStorage.getItem(key);
-            return storedValue ? JSON.parse(storedValue) : defaultValue;
+        // --- DATABASE ONLINE ---
+        const loadFromStorage = async (key, defaultValue) => {
+            try {
+                const response = await fetch(`api/storage.php?key=${encodeURIComponent(key)}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    return data !== null ? data : defaultValue;
+                }
+            } catch (error) {
+                console.error('Error loading from database:', error);
+            }
+            return defaultValue;
         };
-        const saveToStorage = (key, value) => {
-            localStorage.setItem(key, JSON.stringify(value));
+        
+        const saveToStorage = async (key, value) => {
+            try {
+                const response = await fetch('api/storage.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ key, value })
+                });
+                if (!response.ok) {
+                    throw new Error('Failed to save to database');
+                }
+            } catch (error) {
+                console.error('Error saving to database:', error);
+                showMessage('Gagal menyimpan ke database online', 'error');
+            }
         };
 
         // --- INISIALISASI DATA ---
-        const initializeData = () => {
+        const initializeData = async () => {
             const initialMarketingNames = [{ id: 'mkt-1', name: 'Hidayatullah' }, { id: 'mkt-2', name: 'Abdul Fatahurahman' }, { id: 'mkt-3', name: 'Nuzul Arifin' }];
             
             const initialUsers = [
@@ -422,31 +445,31 @@
             const initialUserSubmissions = [{ id: 'sub-1', companyName: 'PT. Maju Bersama', marketingName: 'Hidayatullah', inputDate: '2025-08-01', submittedById: 'user-admin-1', certificateType: 'SBU Konstruksi', sbuType: 'konstruksi', selectedSub: { id: 'p3sm-id', name: 'P3SM' }, selectedKlasifikasi: { id: 'konstruksi-umum-gedung', name: 'UMUM BANGUNAN GEDUNG' }, selectedSubKlasifikasi: 'Sub 1', selectedKualifikasi: { id: 'p3sm-kual-1', name: 'Kecil (K) BUJKN', biaya: 315000 }, selectedBiayaLainnya: null, biayaSetorKantor: 750000, keuntungan: 435000 }, { id: 'sub-2', companyName: 'CV. Jaya Abadi', marketingName: 'Nuzul Arifin', inputDate: '2025-08-03', submittedById: 'user-admin-1', certificateType: 'SBU Konstruksi', sbuType: 'konstruksi', selectedSub: { id: 'gapeknas-id', name: 'GAPEKNAS' }, selectedKlasifikasi: { id: 'konstruksi-umum-sipil', name: 'UMUM BANGUNAN SIPIL' }, selectedSubKlasifikasi: 'Sub A', selectedKualifikasi: { id: 'gpk-kual-1', name: 'Kualifikasi GAPEKNAS 1', biaya: 500000 }, selectedBiayaLainnya: null, biayaSetorKantor: 1000000, keuntungan: 500000 }, { id: 'sub-5', companyName: 'PT. Konsultan Hebat', marketingName: 'Hidayatullah', inputDate: '2025-08-08', submittedById: 'user-admin-1', certificateType: 'SBU Konsultan', sbuType: 'konsultan', selectedSub: { id: 'inkindo-id', name: 'INKINDO' }, selectedKlasifikasi: { id: 'konsultan-rekayasa', name: 'Layanan Jasa Inspeksi Rekayasa' }, selectedSubKlasifikasi: 'Sub Konsultan 1', selectedKualifikasi: { id: 'konsultan-kual-1', name: 'Kualifikasi Konsultan Kecil', biaya: 400000 }, selectedBiayaLainnya: null, biayaSetorKantor: 800000, keuntungan: 400000 }];
             const initialTransactions = [{ id: 'tran-1', transactionDate: '2025-08-05', transactionName: 'kas operasional', cost: 25000, transactionType: 'Keluar', submittedById: 'user-admin-1', proof: 'bukti-kas.pdf' }, { id: 'tran-2', transactionDate: '2025-08-01', transactionName: 'tabungan ruko', cost: 5000000, transactionType: 'Tabungan', submittedById: 'user-admin-1', proof: null }, { id: 'tran-3', transactionDate: '2025-08-02', transactionName: 'Beli ATK', cost: 150000, transactionType: 'Keluar', submittedById: 'user-admin-1', proof: null }];
             
-            appState.loggedInUser = loadFromStorage('sulthan-group-loggedInUser', null);
-            appState.users = loadFromStorage('sulthan-group-users', initialUsers);
-            appState.certificates = loadFromStorage('sulthan-group-certificates', initialCertificates);
-            appState.marketingNames = loadFromStorage('sulthan-group-marketing-names', initialMarketingNames);
-            appState.adminTitles = loadFromStorage('sulthan-group-admin-titles', initialAdminTitles);
-            appState.userSubmissions = loadFromStorage('sulthan-group-user-submissions', initialUserSubmissions);
-            appState.transactions = loadFromStorage('sulthan-group-transactions', initialTransactions);
-            appState.sbuKonstruksiData = loadFromStorage('sulthan-group-sbu-konstruksi-data', initialSbuKonstruksiData);
-            appState.konstruksiKlasifikasiData = loadFromStorage('sulthan-group-konstruksi-klasifikasi', initialKonstruksiKlasifikasiData);
-            appState.p3smKualifikasiData = loadFromStorage('sulthan-group-p3sm-kualifikasi', initialP3SMKualifikasiData);
-            appState.p3smBiayaSetorData = loadFromStorage('sulthan-group-p3sm-biaya-setor', initialP3SMBiayaSetorData);
-            appState.p3smBiayaLainnyaData = loadFromStorage('sulthan-group-p3sm-biaya-lainnya', initialP3SMBiayaLainnyaData);
-            appState.gapeknasKualifikasiData = loadFromStorage('sulthan-group-gapeknas-kualifikasi', initialGapeknasKualifikasiData);
-            appState.gapeknasBiayaSetorData = loadFromStorage('sulthan-group-gapeknas-biaya-setor', initialGapeknasBiayaSetorData);
-            appState.gapeknasBiayaLainnyaData = loadFromStorage('sulthan-group-gapeknas-biaya-lainnya', initialGapeknasBiayaLainnyaData);
-            appState.sbuKonsultanData = loadFromStorage('sulthan-group-sbu-konsultan-data', initialSbuKonsultanData);
-            appState.konsultanKlasifikasiData = loadFromStorage('sulthan-group-konsultan-klasifikasi', initialKonsultanKlasifikasiData);
-            appState.konsultanKualifikasiData = loadFromStorage('sulthan-group-konsultan-kualifikasi', initialKonsultanKualifikasiData);
-            appState.konsultanBiayaSetorData = loadFromStorage('sulthan-group-konsultan-biaya-setor', initialKonsultanBiayaSetorData);
-            appState.konsultanBiayaLainnyaData = loadFromStorage('sulthan-group-konsultan-biaya-lainnya', initialKonsultanBiayaLainnyaData);
-            appState.skkKonstruksiData = loadFromStorage('sulthan-group-skk-konstruksi-data', initialSkkKonstruksiData);
-            appState.skkKlasifikasiData = loadFromStorage('sulthan-group-skk-klasifikasi', initialSkkKlasifikasiData);
-            appState.skkKualifikasiData = loadFromStorage('sulthan-group-skk-kualifikasi', initialSkkKualifikasiData);
-            appState.skkBiayaSetorData = loadFromStorage('sulthan-group-skk-biaya-setor', initialSkkBiayaSetorData);
-            appState.skkBiayaLainnyaData = loadFromStorage('sulthan-group-skk-biaya-lainnya', initialSkkBiayaLainnyaData);
+            appState.loggedInUser = await loadFromStorage('sulthan-group-loggedInUser', null);
+            appState.users = await loadFromStorage('sulthan-group-users', initialUsers);
+            appState.certificates = await loadFromStorage('sulthan-group-certificates', initialCertificates);
+            appState.marketingNames = await loadFromStorage('sulthan-group-marketing-names', initialMarketingNames);
+            appState.adminTitles = await loadFromStorage('sulthan-group-admin-titles', initialAdminTitles);
+            appState.userSubmissions = await loadFromStorage('sulthan-group-user-submissions', initialUserSubmissions);
+            appState.transactions = await loadFromStorage('sulthan-group-transactions', initialTransactions);
+            appState.sbuKonstruksiData = await loadFromStorage('sulthan-group-sbu-konstruksi-data', initialSbuKonstruksiData);
+            appState.konstruksiKlasifikasiData = await loadFromStorage('sulthan-group-konstruksi-klasifikasi', initialKonstruksiKlasifikasiData);
+            appState.p3smKualifikasiData = await loadFromStorage('sulthan-group-p3sm-kualifikasi', initialP3SMKualifikasiData);
+            appState.p3smBiayaSetorData = await loadFromStorage('sulthan-group-p3sm-biaya-setor', initialP3SMBiayaSetorData);
+            appState.p3smBiayaLainnyaData = await loadFromStorage('sulthan-group-p3sm-biaya-lainnya', initialP3SMBiayaLainnyaData);
+            appState.gapeknasKualifikasiData = await loadFromStorage('sulthan-group-gapeknas-kualifikasi', initialGapeknasKualifikasiData);
+            appState.gapeknasBiayaSetorData = await loadFromStorage('sulthan-group-gapeknas-biaya-setor', initialGapeknasBiayaSetorData);
+            appState.gapeknasBiayaLainnyaData = await loadFromStorage('sulthan-group-gapeknas-biaya-lainnya', initialGapeknasBiayaLainnyaData);
+            appState.sbuKonsultanData = await loadFromStorage('sulthan-group-sbu-konsultan-data', initialSbuKonsultanData);
+            appState.konsultanKlasifikasiData = await loadFromStorage('sulthan-group-konsultan-klasifikasi', initialKonsultanKlasifikasiData);
+            appState.konsultanKualifikasiData = await loadFromStorage('sulthan-group-konsultan-kualifikasi', initialKonsultanKualifikasiData);
+            appState.konsultanBiayaSetorData = await loadFromStorage('sulthan-group-konsultan-biaya-setor', initialKonsultanBiayaSetorData);
+            appState.konsultanBiayaLainnyaData = await loadFromStorage('sulthan-group-konsultan-biaya-lainnya', initialKonsultanBiayaLainnyaData);
+            appState.skkKonstruksiData = await loadFromStorage('sulthan-group-skk-konstruksi-data', initialSkkKonstruksiData);
+            appState.skkKlasifikasiData = await loadFromStorage('sulthan-group-skk-klasifikasi', initialSkkKlasifikasiData);
+            appState.skkKualifikasiData = await loadFromStorage('sulthan-group-skk-kualifikasi', initialSkkKualifikasiData);
+            appState.skkBiayaSetorData = await loadFromStorage('sulthan-group-skk-biaya-setor', initialSkkBiayaSetorData);
+            appState.skkBiayaLainnyaData = await loadFromStorage('sulthan-group-skk-biaya-lainnya', initialSkkBiayaLainnyaData);
         };
 
         // --- MANAJEMEN TAMPILAN (RENDER) ---
@@ -468,7 +491,7 @@
             }
         };
 
-        const handleLogin = (e) => {
+        const handleLogin = async (e) => {
             e.preventDefault();
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
@@ -477,7 +500,7 @@
             
             if (userFound && password === atob(userFound.password)) {
                 appState.loggedInUser = userFound;
-                saveToStorage('sulthan-group-loggedInUser', userFound);
+                await saveToStorage('sulthan-group-loggedInUser', userFound);
                 showMessage('Login Berhasil!', 'success');
                 renderApp();
             } else {
@@ -485,9 +508,9 @@
             }
         };
 
-        const handleLogout = () => {
+        const handleLogout = async () => {
             appState.loggedInUser = null;
-            localStorage.removeItem('sulthan-group-loggedInUser');
+            await saveToStorage('sulthan-group-loggedInUser', null);
             appState.activeTab = 'dashboard';
             renderApp();
         };
@@ -1149,7 +1172,7 @@
             modal.classList.add('show');
         };
         window.closeUserModal = () => document.getElementById('user-modal').classList.remove('show');
-        document.getElementById('user-form').addEventListener('submit', (e) => {
+        document.getElementById('user-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const userData = {
                 id: document.getElementById('user-id').value,
@@ -1171,14 +1194,14 @@
                 appState.users.push({ ...userData, id: generateId(), password: btoa(userData.password) });
                 showMessage('Pengguna baru berhasil ditambahkan!', 'success');
             }
-            saveToStorage('sulthan-group-users', appState.users);
+            await saveToStorage('sulthan-group-users', appState.users);
             closeUserModal();
             renderApp();
         });
-        window.deleteUser = (userId) => {
-            openConfirmationModal(() => {
+        window.deleteUser = async (userId) => {
+            openConfirmationModal(async () => {
                 appState.users = appState.users.filter(u => u.id !== userId);
-                saveToStorage('sulthan-group-users', appState.users);
+                await saveToStorage('sulthan-group-users', appState.users);
                 showMessage('Pengguna berhasil dihapus!', 'success');
                 renderApp();
             });
@@ -1203,7 +1226,7 @@
             modal.classList.add('show');
         };
         window.closeCertificateModal = () => document.getElementById('certificate-modal').classList.remove('show');
-        document.getElementById('certificate-form').addEventListener('submit', (e) => {
+        document.getElementById('certificate-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const certData = {
                 id: document.getElementById('certificate-id').value,
@@ -1217,14 +1240,14 @@
                 appState.certificates.push({ ...certData, id: generateId() });
                 showMessage('Sertifikat baru berhasil ditambahkan!', 'success');
             }
-            saveToStorage('sulthan-group-certificates', appState.certificates);
+            await saveToStorage('sulthan-group-certificates', appState.certificates);
             closeCertificateModal();
             renderApp();
         });
-        window.deleteCertificate = (certId) => {
-            openConfirmationModal(() => {
+        window.deleteCertificate = async (certId) => {
+            openConfirmationModal(async () => {
                 appState.certificates = appState.certificates.filter(c => c.id !== certId);
-                saveToStorage('sulthan-group-certificates', appState.certificates);
+                await saveToStorage('sulthan-group-certificates', appState.certificates);
                 showMessage('Sertifikat berhasil dihapus!', 'success');
                 renderApp();
             });
@@ -1248,7 +1271,7 @@
             modal.classList.add('show');
         };
         window.closeMarketingModal = () => document.getElementById('marketing-modal').classList.remove('show');
-        document.getElementById('marketing-form').addEventListener('submit', (e) => {
+        document.getElementById('marketing-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const mktData = {
                 id: document.getElementById('marketing-id').value,
@@ -1261,14 +1284,14 @@
                 appState.marketingNames.push({ ...mktData, id: generateId() });
                 showMessage('Nama marketing ditambahkan!', 'success');
             }
-            saveToStorage('sulthan-group-marketing-names', appState.marketingNames);
+            await saveToStorage('sulthan-group-marketing-names', appState.marketingNames);
             closeMarketingModal();
             renderApp();
         });
-        window.deleteMarketingName = (marketingId) => {
-            openConfirmationModal(() => {
+        window.deleteMarketingName = async (marketingId) => {
+            openConfirmationModal(async () => {
                 appState.marketingNames = appState.marketingNames.filter(m => m.id !== marketingId);
-                saveToStorage('sulthan-group-marketing-names', appState.marketingNames);
+                await saveToStorage('sulthan-group-marketing-names', appState.marketingNames);
                 showMessage('Nama marketing dihapus!', 'success');
                 renderApp();
             });
@@ -1283,9 +1306,9 @@
             appState.actionToConfirm = null;
             document.getElementById('confirmation-modal').classList.remove('show');
         };
-        document.getElementById('confirm-action-btn').addEventListener('click', () => {
+        document.getElementById('confirm-action-btn').addEventListener('click', async () => {
             if (appState.actionToConfirm) {
-                appState.actionToConfirm();
+                await appState.actionToConfirm();
             }
             closeConfirmationModal();
         });
@@ -1515,24 +1538,24 @@
             }
         };
         
-        window.handleSaveSbuAdminChanges = () => {
-            openConfirmationModal(() => {
+        window.handleSaveSbuAdminChanges = async () => {
+            openConfirmationModal(async () => {
                 const { type, tempData, tempKlasifikasiData } = appState.sbuAdmin;
                 if (type === 'konstruksi') {
                     appState.sbuKonstruksiData = JSON.parse(JSON.stringify(tempData));
                     appState.konstruksiKlasifikasiData = JSON.parse(JSON.stringify(tempKlasifikasiData));
-                    saveToStorage('sulthan-group-sbu-konstruksi-data', appState.sbuKonstruksiData);
-                    saveToStorage('sulthan-group-konstruksi-klasifikasi', appState.konstruksiKlasifikasiData);
+                    await saveToStorage('sulthan-group-sbu-konstruksi-data', appState.sbuKonstruksiData);
+                    await saveToStorage('sulthan-group-konstruksi-klasifikasi', appState.konstruksiKlasifikasiData);
                 } else if (type === 'konsultan') {
                     appState.sbuKonsultanData = JSON.parse(JSON.stringify(tempData));
                     appState.konsultanKlasifikasiData = JSON.parse(JSON.stringify(tempKlasifikasiData));
-                    saveToStorage('sulthan-group-sbu-konsultan-data', appState.sbuKonsultanData);
-                    saveToStorage('sulthan-group-konsultan-klasifikasi', appState.konsultanKlasifikasiData);
+                    await saveToStorage('sulthan-group-sbu-konsultan-data', appState.sbuKonsultanData);
+                    await saveToStorage('sulthan-group-konsultan-klasifikasi', appState.konsultanKlasifikasiData);
                 } else if (type === 'skk') {
                     appState.skkKonstruksiData = JSON.parse(JSON.stringify(tempData));
                     appState.skkKlasifikasiData = JSON.parse(JSON.stringify(tempKlasifikasiData));
-                    saveToStorage('sulthan-group-skk-konstruksi-data', appState.skkKonstruksiData);
-                    saveToStorage('sulthan-group-skk-klasifikasi', appState.skkKlasifikasiData);
+                    await saveToStorage('sulthan-group-skk-konstruksi-data', appState.skkKonstruksiData);
+                    await saveToStorage('sulthan-group-skk-klasifikasi', appState.skkKlasifikasiData);
                 }
                 showMessage('Semua perubahan menu telah disimpan!', 'success');
                 closeSbuAdminModal();
@@ -1596,7 +1619,7 @@
         };
         window.closeBiayaModal = () => document.getElementById('biaya-modal').classList.remove('show');
         
-        document.getElementById('biaya-form').addEventListener('submit', (e) => {
+        document.getElementById('biaya-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const id = document.getElementById('biaya-id').value;
             const sbuType = document.getElementById('biaya-sbu-type').value;
@@ -1617,14 +1640,14 @@
                 data.push({ id: generateId(), name, biaya: cost });
             }
             
-            saveToStorage(key, data);
+            await saveToStorage(key, data);
             showMessage('Data biaya berhasil disimpan!', 'success');
             closeBiayaModal();
             renderSbuAdminModalContent();
         });
         
-        window.deleteBiayaItem = (itemId, sbuType, context, type) => {
-            openConfirmationModal(() => {
+        window.deleteBiayaItem = async (itemId, sbuType, context, type) => {
+            openConfirmationModal(async () => {
                 const { data, key } = getBiayaDataSource(sbuType, context, type);
                 if (!key) return;
 
@@ -1650,7 +1673,7 @@
                     if (type === 'biayaLainnya') appState.skkBiayaLainnyaData = updatedData;
                 }
 
-                saveToStorage(key, updatedData);
+                await saveToStorage(key, updatedData);
                 showMessage('Item biaya berhasil dihapus!', 'success');
                 renderSbuAdminModalContent();
             });
@@ -1972,7 +1995,7 @@
             });
         };
 
-        const handleSaveSubmission = (e) => {
+        const handleSaveSubmission = async (e) => {
             e.preventDefault();
             const form = e.target;
             const { selectedSub, selectedKlasifikasi, selectedSubKlasifikasi, selectedKualifikasi, selectedBiayaLainnya } = appState.sbuUserFormState;
@@ -2035,14 +2058,14 @@
                 appState.userSubmissions.push({ ...submissionData, id: generateId() });
                 showMessage('Data baru berhasil ditambahkan!', 'success');
             }
-            saveToStorage('sulthan-group-user-submissions', appState.userSubmissions);
+            await saveToStorage('sulthan-group-user-submissions', appState.userSubmissions);
             handleBackToPortal();
         };
 
-        window.deleteSubmission = (submissionId) => {
-            openConfirmationModal(() => {
+        window.deleteSubmission = async (submissionId) => {
+            openConfirmationModal(async () => {
                 appState.userSubmissions = appState.userSubmissions.filter(s => s.id !== submissionId);
-                saveToStorage('sulthan-group-user-submissions', appState.userSubmissions);
+                await saveToStorage('sulthan-group-user-submissions', appState.userSubmissions);
                 showMessage('Data berhasil dihapus!', 'success');
                 renderApp();
             });
@@ -2095,7 +2118,7 @@
                 wrapper.classList.add('hidden');
             }
         });
-        document.getElementById('transaction-form').addEventListener('submit', (e) => {
+        document.getElementById('transaction-form').addEventListener('submit', async (e) => {
             e.preventDefault();
             const selectedName = document.getElementById('transaction-name-select').value;
             const customName = document.getElementById('transaction-custom-name').value;
@@ -2134,14 +2157,14 @@
                 appState.transactions.push({ ...transactionData, id: generateId() });
                 showMessage('Transaksi baru berhasil ditambahkan!', 'success');
             }
-            saveToStorage('sulthan-group-transactions', appState.transactions);
+            await saveToStorage('sulthan-group-transactions', appState.transactions);
             closeTransactionModal();
             renderApp();
         });
-        window.deleteTransaction = (transactionId) => {
-            openConfirmationModal(() => {
+        window.deleteTransaction = async (transactionId) => {
+            openConfirmationModal(async () => {
                 appState.transactions = appState.transactions.filter(t => t.id !== transactionId);
-                saveToStorage('sulthan-group-transactions', appState.transactions);
+                await saveToStorage('sulthan-group-transactions', appState.transactions);
                 showMessage('Transaksi berhasil dihapus!', 'success');
                 renderApp();
             });
@@ -2395,16 +2418,16 @@
             document.getElementById('import-btn')?.addEventListener('click', handleImportData);
         };
         
-        const handleExportData = () => {
+        const handleExportData = async () => {
             const dataToExport = {};
-            EXPORTABLE_STORAGE_KEYS.forEach(key => {
-                const data = localStorage.getItem(key);
-                if (data) {
+            for (const key of EXPORTABLE_STORAGE_KEYS) {
+                const data = await loadFromStorage(key, null);
+                if (data !== null) {
                     // Mengambil bagian setelah 'sulthan-group-' untuk nama kunci di JSON
                     const exportKey = key.replace('sulthan-group-', '');
-                    dataToExport[exportKey] = JSON.parse(data);
+                    dataToExport[exportKey] = data;
                 }
-            });
+            }
 
             const jsonString = JSON.stringify(dataToExport, null, 2);
             const blob = new Blob([jsonString], { type: 'application/json' });
@@ -2431,9 +2454,9 @@
                 return;
             }
 
-            openConfirmationModal(() => {
+            openConfirmationModal(async () => {
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = async (event) => {
                     try {
                         const importedData = JSON.parse(event.target.result);
                         
@@ -2442,13 +2465,13 @@
                             throw new Error('File tidak valid atau rusak.');
                         }
 
-                        // Menimpa data di localStorage
-                        Object.keys(importedData).forEach(key => {
+                        // Menimpa data di database online
+                        for (const key of Object.keys(importedData)) {
                             const storageKey = `sulthan-group-${key}`;
                             if (EXPORTABLE_STORAGE_KEYS.includes(storageKey)) {
-                                saveToStorage(storageKey, importedData[key]);
+                                await saveToStorage(storageKey, importedData[key]);
                             }
-                        });
+                        }
                         
                         showMessage('Data berhasil diimpor! Aplikasi akan dimuat ulang.', 'success');
                         
@@ -2466,8 +2489,10 @@
 
 
         // --- MULAI APLIKASI ---
-        initializeData();
-        renderApp();
+        (async () => {
+            await initializeData();
+            renderApp();
+        })();
     });
     </script>
 </body>
