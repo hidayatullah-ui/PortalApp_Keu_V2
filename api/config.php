@@ -3,6 +3,7 @@
 // Basic DB + CORS bootstrap for OpenLiteSpeed/CyberPanel
 // Set your DB creds here or via environment variables in CyberPanel
 
+$DB_HOST = 'localhost'; // Tambahkan atau pastikan variabel ini ada
 $DB_NAME = getenv('DB_NAME') ?: 'sult_portal_db';
 $DB_USER = getenv('DB_USER') ?: 'sult_portal_user';
 $DB_PASS = getenv('DB_PASS') ?: '#Kopi9976';
